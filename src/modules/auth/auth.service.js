@@ -19,6 +19,31 @@ async function registerUser({ name, email, password, phone }) {
     email,
     passwordHash,
     phone,
+    role: 'user',
+  });
+
+  const accessToken = signAccessToken({ sub: user.id, role: user.role });
+  const refreshToken = signRefreshToken({ sub: user.id, role: user.role });
+
+  return { user: user.toSafeObject(), accessToken, refreshToken };
+}
+
+async function registerAdminUser({ name, email, password, phone }) {
+  const existing = await User.findOne({ email });
+  if (existing) {
+    const error = new Error('Email is already registered');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+
+  const user = await User.create({
+    name,
+    email,
+    passwordHash,
+    phone,
+    role: 'admin',
   });
 
   const accessToken = signAccessToken({ sub: user.id, role: user.role });
@@ -32,6 +57,12 @@ async function loginUser({ email, password }) {
   if (!user) {
     const error = new Error('Invalid email or password');
     error.statusCode = 401;
+    throw error;
+  }
+
+  if (user.isLocked) {
+    const error = new Error('Account is locked');
+    error.statusCode = 403;
     throw error;
   }
 
@@ -61,6 +92,7 @@ async function getMe(userId) {
 
 module.exports = {
   registerUser,
+  registerAdminUser,
   loginUser,
   getMe,
 };

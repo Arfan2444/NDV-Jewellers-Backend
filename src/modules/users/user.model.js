@@ -26,6 +26,11 @@ const UserSchema = new mongoose.Schema(
       enum: ['user', 'admin'],
       default: 'user',
     },
+    isLocked: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     addresses: [AddressSchema],
     wishlist: [
       {

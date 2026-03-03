@@ -15,6 +15,8 @@ const checkoutRoutes = require("./modules/orders/checkout.routes");
 const ordersRoutes = require("./modules/orders/orders.routes");
 const customRoutes = require("./modules/custom-orders/customOrders.routes");
 const accountRoutes = require("./modules/account/account.routes");
+const adminRoutes = require("./modules/admin/admin.routes");
+const adminAuthRoutes = require("./modules/admin/adminAuth.routes");
 
 function createApp() {
   const app = express();
@@ -41,6 +43,8 @@ function createApp() {
   app.use("/api/orders", ordersRoutes);
   app.use("/api/custom", customRoutes);
   app.use("/api/account", accountRoutes);
+  app.use("/api/admin", adminRoutes);
+  app.use("/api/admin/auth", adminAuthRoutes);
 
   app.get("/api/health", (req, res) => {
     res.json({

@@ -153,5 +153,7 @@ module.exports = {
   logout,
   refresh,
   me,
+  setAuthCookies,
+  clearAuthCookies,
 };
 
