@@ -8,6 +8,8 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 const authRoutes = require('./modules/auth/auth.routes');
 const userRoutes = require('./modules/users/user.routes');
 const productRoutes = require('./modules/products/product.routes');
+const cartRoutes = require('./modules/cart/cart.routes');
+const wishlistRoutes = require('./modules/wishlist/wishlist.routes');
 
 function createApp() {
   const app = express();
@@ -27,6 +29,8 @@ function createApp() {
   app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/products', productRoutes);
+  app.use('/api/cart', cartRoutes);
+  app.use('/api/wishlist', wishlistRoutes);
 
   app.get('/api/health', (req, res) => {
     res.json({
