@@ -16,7 +16,7 @@ async function getCurrentUserProfile(userId) {
 }
 
 async function updateCurrentUserProfile(userId, updates) {
-  const allowedFields = ['name', 'phone', 'settings'];
+  const allowedFields = ['name', 'phone', 'settings', 'passwordHash'];
   const toUpdate = {};
 
   allowedFields.forEach((field) => {
@@ -105,6 +105,7 @@ async function deleteAccount(userId) {
 }
 
 module.exports = {
+  getCurrentUser,
   getCurrentUserProfile,
   updateCurrentUserProfile,
   getAddresses,
