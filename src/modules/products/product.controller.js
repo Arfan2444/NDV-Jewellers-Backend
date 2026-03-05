@@ -8,6 +8,7 @@ const {
   updateProduct,
   deleteProduct,
 } = require('./product.service');
+const { uploadProductImage } = require('../../utils/s3');
 
 const productCreateSchema = Joi.object({
   name: Joi.string().required(),
@@ -89,14 +90,68 @@ async function getCategories(req, res, next) {
 
 async function createProductController(req, res, next) {
   try {
-    const { error, value } = productCreateSchema.validate(req.body);
+    const body = { ...req.body };
+
+    // If images metadata is sent as JSON string, parse it
+    if (typeof body.images === 'string') {
+      try {
+        body.images = JSON.parse(body.images);
+      } catch (e) {
+        body.images = [];
+      }
+    }
+
+    // Ensure images is an array
+    if (!Array.isArray(body.images)) {
+      body.images = [];
+    }
+
+    // Parse SEO if sent as JSON string in form-data
+    if (typeof body.seo === 'string') {
+      try {
+        body.seo = JSON.parse(body.seo);
+      } catch (e) {
+        body.seo = {};
+      }
+    }
+
+    const { error, value } = productCreateSchema.validate(body);
     if (error) {
       const err = new Error(error.details[0].message);
       err.statusCode = 400;
       throw err;
     }
 
-    const product = await createProduct(value);
+    const files = Array.isArray(req.files) ? req.files : [];
+
+    // Upload any provided images to S3 and build the images array
+    const uploadedImages = [];
+
+    for (let i = 0; i < files.length; i += 1) {
+      const file = files[i];
+      const url = await uploadProductImage({
+        buffer: file.buffer,
+        originalName: file.originalname,
+        mimeType: file.mimetype,
+      });
+
+      const altFromBody =
+        Array.isArray(value.images) && value.images[i] && value.images[i].alt
+          ? value.images[i].alt
+          : undefined;
+
+      uploadedImages.push({
+        url,
+        alt: altFromBody || file.originalname || '',
+      });
+    }
+
+    const productPayload = {
+      ...value,
+      images: uploadedImages.length > 0 ? uploadedImages : value.images,
+    };
+
+    const product = await createProduct(productPayload);
     res.status(201).json({
       success: true,
       data: product,
@@ -108,14 +163,62 @@ async function createProductController(req, res, next) {
 
 async function updateProductController(req, res, next) {
   try {
-    const { error, value } = productCreateSchema.min(1).validate(req.body);
+    const body = { ...req.body };
+
+    if (typeof body.images === 'string') {
+      try {
+        body.images = JSON.parse(body.images);
+      } catch (e) {
+        body.images = undefined;
+      }
+    }
+
+    if (typeof body.seo === 'string') {
+      try {
+        body.seo = JSON.parse(body.seo);
+      } catch (e) {
+        body.seo = undefined;
+      }
+    }
+
+    const { error, value } = productCreateSchema.min(1).validate(body);
     if (error) {
       const err = new Error(error.details[0].message);
       err.statusCode = 400;
       throw err;
     }
 
-    const product = await updateProduct(req.params.id, value);
+    const files = Array.isArray(req.files) ? req.files : [];
+    const uploadedImages = [];
+
+    for (let i = 0; i < files.length; i += 1) {
+      const file = files[i];
+      const url = await uploadProductImage({
+        buffer: file.buffer,
+        originalName: file.originalname,
+        mimeType: file.mimetype,
+      });
+
+      const altFromBody =
+        Array.isArray(value.images) && value.images[i] && value.images[i].alt
+          ? value.images[i].alt
+          : undefined;
+
+      uploadedImages.push({
+        url,
+        alt: altFromBody || file.originalname || '',
+      });
+    }
+
+    const updatePayload = {
+      ...value,
+    };
+
+    if (uploadedImages.length > 0) {
+      updatePayload.images = uploadedImages;
+    }
+
+    const product = await updateProduct(req.params.id, updatePayload);
     res.json({
       success: true,
       data: product,

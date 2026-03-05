@@ -1,4 +1,5 @@
 const express = require('express');
+const multer = require('multer');
 const requireAuth = require('../../middleware/auth');
 const requireRole = require('../../middleware/roles');
 const {
@@ -16,6 +17,11 @@ const {
   adminUpdateUserHandler,
 } = require('./admin.controller');
 
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 10 },
+});
+
 const router = express.Router();
 
 router.use(requireAuth, requireRole('admin'));
@@ -23,8 +29,8 @@ router.use(requireAuth, requireRole('admin'));
 // Products
 router.get('/products', getProducts);
 router.get('/products/:slug', getProduct);
-router.post('/products', createProductController);
-router.patch('/products/:id', updateProductController);
+router.post('/products', upload.array('images', 10), createProductController);
+router.patch('/products/:id', upload.array('images', 10), updateProductController);
 router.delete('/products/:id', deleteProductController);
 
 // Orders

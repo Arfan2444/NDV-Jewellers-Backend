@@ -1,4 +1,5 @@
 const http = require('http');
+require('dotenv').config();
 const config = require('./config/env');
 const connectDatabase = require('./config/database');
 const createApp = require('./app');
